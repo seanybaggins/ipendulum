@@ -1,0 +1,7 @@
+.gitconfig
+.cache
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+.local
+.vscode-server

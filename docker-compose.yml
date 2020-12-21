@@ -1,0 +1,4 @@
+version: "3"
+services:
+  development:
+    image: jupyter/scipy-notebook
