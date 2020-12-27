@@ -6,3 +6,5 @@ ipython_config.py
 .local
 .vscode-server
 .python_history
+.jupyter
+.bash_history
