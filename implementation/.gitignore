@@ -4,6 +4,7 @@
 Cargo.lock
 target/
 .cargo-ok
+core
 
 # editor files
 .vscode/*

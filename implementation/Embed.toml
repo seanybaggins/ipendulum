@@ -1,6 +1,2 @@
 [default.general]
 chip = "STM32F303VCTx"
-
-# The debugger real time transfer
-[default.rtt]
-enabled = true
