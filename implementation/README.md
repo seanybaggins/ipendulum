@@ -19,3 +19,13 @@ Attach to the gdbserver and load the application with breakpoints simply by runn
 ```
 cargo run
 ```
+
+You can run unit tests on the host machine by running
+```
+test
+```
+in the bash shell
+
+## References
+[stm32f3 reference manual](http://www.st.com/resource/en/reference_manual/dm00043574.pdf)
+[stm32f3 user manual](http://www.st.com/resource/en/user_manual/dm00063382.pdf)

@@ -17,3 +17,4 @@ USER rustacean
 # Installing tools in user space
 RUN rustup target add thumbv7em-none-eabihf
 RUN cargo install cargo-embed --vers 0.10.1
+RUN echo 'alias test="cargo test --target x86_64-unknown-linux-gnu"' >> ~/.bashrc

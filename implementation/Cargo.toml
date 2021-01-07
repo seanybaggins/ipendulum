@@ -30,7 +30,7 @@ rtt-target = {version = "0.3.0", features = ["cortex-m"]}
 # this lets you use `cargo fix`!
 [[bin]]
 name = "implementation"
-test = false
+test = true
 bench = false
 
 [profile.release]
