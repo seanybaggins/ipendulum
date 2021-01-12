@@ -8,16 +8,30 @@ use cortex_m_semihosting::{dbg, hprintln};
 use stm32f3xx_hal as hal;
 use hal::prelude::*;
 
+use cortex_m::asm::delay;
+
 use cortex_m_rt::entry;
 
 #[cfg_attr(not(test), entry)]
 fn main() -> ! {
     let device_peripherals = hal::pac::Peripherals::take().unwrap();
+    // Setting the clock frequency to the maximum supported value
+    let mut flash = device_peripherals.FLASH.constrain();
     let mut reset_and_control_clock = device_peripherals.RCC.constrain();
-    let mut gpiob = device_peripherals.GPIOB.split(&mut reset_and_control_clock.ahb);
-    // Test gpiob line here
+    reset_and_control_clock.cfgr.sysclk(64.mhz()).freeze(&mut flash.acr);
 
-    loop {}
+    // Configuring LED
+    let mut gpioe = device_peripherals.GPIOE.split(&mut reset_and_control_clock.ahb);
+    let mut red_led = gpioe.pe9
+        .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
+
+    // Creating a delay abstraction
+    loop {
+        red_led.toggle().unwrap();
+        delay(8_000_000);
+        red_led.toggle().unwrap();
+        delay(8_000_000);
+    }
 }
 
 #[cfg(test)]
