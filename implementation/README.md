@@ -29,3 +29,6 @@ in the bash shell
 ## References
 [stm32f3 reference manual](http://www.st.com/resource/en/reference_manual/dm00043574.pdf)
 [stm32f3 user manual](http://www.st.com/resource/en/user_manual/dm00063382.pdf)
+
+## Notes
+- used <https://www.st.com/resource/en/datasheet/stm32f303cc.pdf> page 45 to determine alternate function mappings for pins.
