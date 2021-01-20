@@ -2,20 +2,33 @@
 #![cfg_attr(not(test), no_main)]
 mod encoders;
 
+use core::cell::RefCell;
 use core::u16;
 
 // Allows for communication back to host during panics and dubugging
 use cortex_m_semihosting::{dbg, hprintln};
 use panic_semihosting as _;
 
+use hal::gpio::gpioa::{PA1, PA3};
+use hal::gpio::gpioe::{PE13, PE15};
+use hal::gpio::{Input, PullUp};
+use hal::interrupt;
+use hal::interrupt::{EXTI0, EXTI1};
 use hal::prelude::*;
 use hal::pwm;
 use stm32f3xx_hal as hal;
 
 use cortex_m::asm;
+use cortex_m::interrupt::free as interrupt_free;
+use cortex_m::interrupt::Mutex;
 use cortex_m_rt::entry;
 
-use encoders::PendulumEncoder;
+use encoders::Encoder;
+
+static CART_ENCODER: Mutex<RefCell<Option<Encoder<PA3<Input<PullUp>>, PA1<Input<PullUp>>>>>> =
+    Mutex::new(RefCell::new(None));
+static PENDULUM_ENCODER: Mutex<RefCell<Option<Encoder<PE15<Input<PullUp>>, PE13<Input<PullUp>>>>>> =
+    Mutex::new(RefCell::new(None));
 
 #[cfg_attr(not(test), entry)]
 fn main() -> ! {
@@ -34,6 +47,9 @@ fn main() -> ! {
         .split(&mut reset_and_control_clock.ahb);
     let mut gpioe = device_peripherals
         .GPIOE
+        .split(&mut reset_and_control_clock.ahb);
+    let mut gpioa = device_peripherals
+        .GPIOA
         .split(&mut reset_and_control_clock.ahb);
 
     // Configuring motor
@@ -56,15 +72,32 @@ fn main() -> ! {
     motor.set_duty(motor.get_max_duty() / 4);
     motor.forward();
 
-    // Creating encoder
-    let a_pb15 = gpiob
-        .pb15
-        .into_pull_up_input(&mut gpiob.moder, &mut gpiob.pupdr);
-    let b_pb13 = gpiob
-        .pb13
-        .into_pull_up_input(&mut gpiob.moder, &mut gpiob.pupdr);
-    let encoder = PendulumEncoder::new(a_pb15, b_pb13);
-    
+    // Setting the global encoder for the cart
+    let a_pa3 = gpioa
+        .pa3
+        .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+    let b_pa1 = gpioa
+        .pa1
+        .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+    interrupt_free(|cs| {
+        CART_ENCODER
+            .borrow(cs)
+            .replace_with(|_| Some(Encoder::new(a_pa3, b_pa1)))
+    });
+
+    // Setting the global encoder for the pendulum
+    let a_pe15 = gpioe
+        .pe15
+        .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
+    let b_pe13 = gpioe
+        .pe13
+        .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
+    interrupt_free(|cs| {
+        PENDULUM_ENCODER
+            .borrow(cs)
+            .replace_with(|_| Some(Encoder::new(a_pe15, b_pe13)))
+    });
+
     // Configuring a LED
     let mut red_led = gpioe
         .pe9
@@ -77,6 +110,18 @@ fn main() -> ! {
         red_led.toggle().unwrap();
         asm::delay(8_000_000);
     }
+}
+
+#[interrupt]
+fn EXTI0() {
+    interrupt_free(|cs| {
+        
+    })
+}
+
+#[interrupt]
+fn EXTI1() {
+    
 }
 
 #[cfg(test)]

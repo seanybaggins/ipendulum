@@ -1,15 +1,15 @@
+use core::ops::Deref;
 use embedded_hal::digital::v2::InputPin;
 use stm32f3xx_hal::time::Instant;
-use core::ops::Deref;
 
-pub struct PendulumEncoder<A, B> {
+pub struct Encoder<A, B> {
     inner: rotary_encoder_hal::Rotary<A, B>,
     current_counts: u16,
     previous_counts: Option<u16>,
-    prev_count_instant: Option<Instant>
+    prev_count_instant: Option<Instant>,
 }
 
-impl<A, B> PendulumEncoder<A, B>
+impl<A, B> Encoder<A, B>
 where
     A: InputPin,
     B: InputPin,
@@ -17,16 +17,20 @@ where
     pub fn new(pin_a: A, pin_b: B) -> Self {
         let encoder = rotary_encoder_hal::Rotary::new(pin_a, pin_b);
 
-        PendulumEncoder {
+        Encoder {
             inner: encoder,
-            prev_count_instant: None,
             current_counts: 0,
-            previous_counts: None
+            prev_count_instant: None,
+            previous_counts: None,
         }
+    }
+
+    pub fn update() {
+        
     }
 }
 
-impl<A, B> Deref for PendulumEncoder<A, B>
+impl<A, B> Deref for Encoder<A, B>
 where
     A: InputPin,
     B: InputPin,

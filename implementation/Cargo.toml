@@ -9,12 +9,12 @@ version = "0.1.0"
 cortex-m = "0.6.4"
 cortex-m-rt = "0.6.10"
 cortex-m-semihosting = "0.3.3"
-stm32f3xx-hal = {version = "0.6.1", features = ["stm32f303xc"]}
+stm32f3xx-hal = {version = "0.6.1", features = ["stm32f303xc", "rt"]}
 panic-semihosting = "0.5.6"
 rtt-target = {version = "0.3.0", features = ["cortex-m"]}
 rotary-encoder-hal = "0.3.0"
 l298n = {path = "../l298n"}
-embedded-hal = "0.2.4"
+embedded-hal = {version = "0.2.4", features = ["unproven"]}
 #panic-halt = "0.2.0"
 
 # Uncomment for the panic example.
