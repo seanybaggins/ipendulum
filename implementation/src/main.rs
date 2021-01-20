@@ -61,7 +61,7 @@ fn main() -> ! {
     );
     let pb8 = gpiob.pb8.into_af1(&mut gpiob.moder, &mut gpiob.afrh);
     let pwm_ena_pb8 = pwm_channel_no_pins.output_to_pb8(pb8);
-    let in_1_pb6 = gpiob
+    let mut in_1_pb6 = gpiob
         .pb6
         .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
     let in_2_pb7 = gpiob
@@ -82,7 +82,7 @@ fn main() -> ! {
     interrupt_free(|cs| {
         CART_ENCODER
             .borrow(cs)
-            .replace_with(|_| Some(Encoder::new(a_pa3, b_pa1)))
+            .replace(Some(Encoder::new(a_pa3, b_pa1)))
     });
 
     // Setting the global encoder for the pendulum
@@ -95,7 +95,7 @@ fn main() -> ! {
     interrupt_free(|cs| {
         PENDULUM_ENCODER
             .borrow(cs)
-            .replace_with(|_| Some(Encoder::new(a_pe15, b_pe13)))
+            .replace(Some(Encoder::new(a_pe15, b_pe13)))
     });
 
     // Configuring a LED
@@ -114,14 +114,12 @@ fn main() -> ! {
 
 #[interrupt]
 fn EXTI0() {
-    interrupt_free(|cs| {
-        
-    })
+    hprintln!("EXTI0 triggered").unwrap();
 }
 
 #[interrupt]
 fn EXTI1() {
-    
+    hprintln!("EXTI1 triggered").unwrap();
 }
 
 #[cfg(test)]
