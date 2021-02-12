@@ -9,11 +9,11 @@ version = "0.1.0"
 cortex-m = "0.6.4"
 cortex-m-rt = "0.6.10"
 cortex-m-semihosting = "0.3.3"
-stm32f3xx-hal = {version = "0.6.1", features = ["stm32f303xc", "rt"]}
+stm32f3xx-hal = {path = "stm32f3xx-hal", features = ["stm32f303xc", "rt"]}
 panic-semihosting = "0.5.6"
 #rtt-target = {version = "0.3.0", features = ["cortex-m"]}
-rotary-encoder-hal = "0.3.0"
-l298n = {path = "../l298n"}
+l298n = {path = "../drivers/l298n"}
+es38 = {path = "../drivers/es38"}
 embedded-hal = "0.2.4"
 #panic-halt = "0.2.0"
 
