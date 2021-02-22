@@ -33,7 +33,8 @@ pub struct Hardware {
 }
 
 impl Hardware {
-    pub fn get() -> Self {
+    pub fn take() -> Self {
+        defmt::trace!("Hardware take");
         // Typical acquiring of board singleton and setting the clock speed
         let device_peripherals = pac::Peripherals::take().unwrap();
         let mut flash = device_peripherals.FLASH.constrain();
@@ -86,7 +87,7 @@ impl Hardware {
             .pe15
             .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
         let origin_offset_counts = 180;
-        let counts_per_rev = 600;
+        let counts_per_rev = 2400;
 
         let pendulum_encoder: PendulumEncoder =
             es38::Encoder::new(a_pe13, b_pe15, counts_per_rev, origin_offset_counts);
@@ -96,14 +97,18 @@ impl Hardware {
             .pa1
             .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
         a_pa1.make_interrupt_source(&mut syscfg);
-        a_pa1.trigger_on_edge(&mut exti, Edge::Rising);
+        a_pa1.trigger_on_edge(&mut exti, Edge::RisingFalling);
         a_pa1.enable_interrupt(&mut exti);
 
-        let b_pa3: CartEncIn2 = gpioa
+        let mut b_pa3: CartEncIn2 = gpioa
             .pa3
             .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
+        b_pa3.make_interrupt_source(&mut syscfg);
+        b_pa3.trigger_on_edge(&mut exti, Edge::RisingFalling);
+        b_pa3.enable_interrupt(&mut exti);
+
         let origin_offset_counts = 0;
-        let counts_per_rev = 600;
+        let counts_per_rev = 2400;
 
         let cart_encoder: CartEncoder =
             es38::Encoder::new(a_pa1, b_pa3, counts_per_rev, origin_offset_counts);
