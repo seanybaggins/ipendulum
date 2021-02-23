@@ -1,0 +1,10 @@
+[submodule "drivers/es38"]
+	path = drivers/es38
+	url = https://github.com/seanybaggins/es38.git
+[submodule "drivers/l298n"]
+	path = drivers/l298n
+	url = https://github.com/seanybaggins/l298n.git
+[submodule "implementation/stm32f3xx-hal"]
+	path = implementation/stm32f3xx-hal
+	url = https://github.com/seanybaggins/stm32f3xx-hal.git
+	branch = gpio-exti-declaritive
