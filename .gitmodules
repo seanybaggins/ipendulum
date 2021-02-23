@@ -1,9 +1,9 @@
 [submodule "l298n"]
-	path = l298n
-	url = /home/sean/ipendulum/drivers/l298n/
+	path = /home/sean/ipendulum/drivers/l298n
+	url = https://github.com/seanybaggins/l298n.git 
 [submodule "es38"]
-	path = es38
-	url = /home/sean/ipendulum/drivers/es38/
+	path = /home/sean/ipendulum/drivers/es38
+	url = https://github.com/seanybaggins/es38.git 
 [submodule "stm32f3xx-hal"]
-	path = stm32f3xx-hal
-	url = /home/sean/ipendulum/implementation/stm32f3xx-hal/
+	path = /home/sean/ipendulum/stm32f3xx-hal
+	url = https://github.com/seanybaggins/stm32f3xx-hal.git 
