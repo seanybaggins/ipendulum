@@ -3,7 +3,7 @@
 mod init;
 
 use core::cell::RefCell;
-
+use core::convert::TryInto;
 // Allows for communication back to host during panics and dubugging
 // Uncomment when using GDB
 // #[allow(unused_imports)]
@@ -18,10 +18,11 @@ use hal::{
     gpio::ExtiPin,
     interrupt,
     pac::{Interrupt, NVIC},
+    time::{duration::*, Clock},
 };
 use stm32f3xx_hal as hal;
 
-use init::{CartEncoder, PendulumEncoder};
+use init::{CartEncoder, PendulumEncoder, StopWatch};
 
 use cortex_m::interrupt::free as interrupt_free;
 use cortex_m::interrupt::Mutex;
@@ -29,6 +30,7 @@ use cortex_m_rt::entry;
 
 static CART_ENCODER: Mutex<RefCell<Option<CartEncoder>>> = Mutex::new(RefCell::new(None));
 static PENDULUM_ENCODER: Mutex<RefCell<Option<PendulumEncoder>>> = Mutex::new(RefCell::new(None));
+static STOPWATCH: Mutex<RefCell<Option<StopWatch>>> = Mutex::new(RefCell::new(None));
 
 #[entry]
 fn main() -> ! {
@@ -37,12 +39,14 @@ fn main() -> ! {
         pendulum_encoder,
         cart_encoder,
         motor_driver: _,
+        stopwatch,
     } = init::Hardware::take();
 
     // handing the hardware over to a global context do they can be accessed within an interrupt
     interrupt_free(|cs| {
         CART_ENCODER.borrow(cs).replace(Some(cart_encoder));
         PENDULUM_ENCODER.borrow(cs).replace(Some(pendulum_encoder));
+        STOPWATCH.borrow(cs).replace(Some(stopwatch));
     });
 
     defmt::debug!("Unmasking interrupts");
@@ -53,11 +57,48 @@ fn main() -> ! {
     }
 
     defmt::trace!("looping forever");
-    loop {}
+    loop {
+        let cart_angle = interrupt_free(|cs| {
+            CART_ENCODER
+                .borrow(cs)
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .angle()
+                .clone()
+        });
+        let time_since_epoch_milli_sec: Milliseconds<u32> = interrupt_free(|cs| {
+            STOPWATCH
+                .borrow(cs)
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .try_now()
+                .unwrap()
+                .duration_since_epoch()
+                .try_into()
+                .unwrap()
+        });
+        let cart_degrees_per_sec = interrupt_free(|cs| {
+            CART_ENCODER
+                .borrow(cs)
+                .borrow_mut()
+                .as_mut()
+                .unwrap()
+                .velocity()
+                .degrees_per_sec(cart_angle, time_since_epoch_milli_sec)
+        });
+
+        defmt::debug!("cart_angle = {} deg", cart_angle.degrees());
+        defmt::debug!("cart_degree_per_sec = {} deg/sec", cart_degrees_per_sec,);
+
+        cortex_m::asm::delay(16_000_000)
+    }
 }
 
 fn update_cart(cs: &cortex_m::interrupt::CriticalSection) {
     defmt::trace!("update cart");
+
     let mut cart_encoder = CART_ENCODER.borrow(cs).borrow_mut();
     let cart_encoder = cart_encoder
         .as_mut()
@@ -67,8 +108,6 @@ fn update_cart(cs: &cortex_m::interrupt::CriticalSection) {
     cart_encoder
         .update()
         .expect("Failed to update the position of the encoder");
-    defmt::debug!("counts: {}", cart_encoder.angle().counts());
-    defmt::debug!("theta: {}", cart_encoder.angle().degrees());
 
     cart_encoder
         .hardware()
@@ -80,6 +119,7 @@ fn update_cart(cs: &cortex_m::interrupt::CriticalSection) {
         .pin_b()
         .clear_interrupt_pending_bit();
 }
+
 // Cart Encoder Interrupt
 #[interrupt]
 fn EXTI1() {
@@ -94,4 +134,6 @@ fn EXTI3() {
 }
 // Pendulum Encoder Interrupt
 #[interrupt]
-fn EXTI15_10() {}
+fn EXTI15_10() {
+    defmt::trace!("Interrupt EXTI15_10");
+}

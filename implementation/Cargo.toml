@@ -21,6 +21,7 @@ defmt = "0.2.0"
 l298n = {path = "../drivers/l298n"}
 es38 = {path = "../drivers/es38"}
 embedded-hal = "0.2.4"
+embedded-time = "0.10.1"
 #panic-halt = "0.2.0"
 
 # Uncomment for the panic example.
@@ -39,7 +40,7 @@ lto = true # better optimizations
 
 [features]
 default = [
-  "defmt-debug",
+    "defmt-debug",  
 ]
 defmt-default = []
 defmt-trace = []
