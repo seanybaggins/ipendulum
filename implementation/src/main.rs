@@ -3,7 +3,7 @@
 mod init;
 
 use core::cell::RefCell;
-use core::convert::TryInto;
+use core::convert::{Infallible, TryInto};
 // Allows for communication back to host during panics and dubugging
 // Uncomment when using GDB
 // #[allow(unused_imports)]
@@ -14,6 +14,7 @@ use panic_probe as _;
 // Allows real time logging back to the host. Unfortunately, this is not compatible  with GDB
 use defmt_rtt as _;
 
+use embedded_hal::digital::v2::InputPin;
 use hal::{
     gpio::ExtiPin,
     interrupt,
@@ -22,6 +23,7 @@ use hal::{
 };
 use stm32f3xx_hal as hal;
 
+use es38::Encoder;
 use init::{CartEncoder, PendulumEncoder, StopWatch};
 
 use cortex_m::interrupt::free as interrupt_free;
@@ -112,26 +114,28 @@ fn main() -> ! {
     }
 }
 
-fn update_cart(cs: &cortex_m::interrupt::CriticalSection) {
+fn update_encoder<A, B>(
+    encoder: Mutex<RefCell<Option<Encoder<A, B>>>>,
+    cs: &cortex_m::interrupt::CriticalSection,
+) where
+    A: InputPin,
+    A::Error: Infallible,
+    B: InputPin,
+    B::Error as Infallible,
+{
     defmt::trace!("update cart");
 
     let millisec_since_epoch = get_milli_sec_since_epoch(cs);
-    let mut cart_encoder = CART_ENCODER.borrow(cs).borrow_mut();
-    let cart_encoder = cart_encoder
-        .as_mut()
-        .expect("EXTI1 interrupt was called and CartEncoder was not intialized");
 
     // Update the angle and direction state of the encoder
-    cart_encoder
+    get_global_ref_mut!(encoder, cs)
         .update(millisec_since_epoch)
-        .expect("Failed to update the position of the encoder");
-
-    cart_encoder
+        .unwrap();
+    get_global_ref_mut!(CART_ENCODER, cs)
         .hardware()
         .pin_a()
         .clear_interrupt_pending_bit();
-
-    cart_encoder
+    get_global_ref_mut!(CART_ENCODER, cs)
         .hardware()
         .pin_b()
         .clear_interrupt_pending_bit();
