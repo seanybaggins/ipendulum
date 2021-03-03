@@ -121,7 +121,7 @@ fn update_encoder<A, B>(
     A: InputPin,
     A::Error: Infallible,
     B: InputPin,
-    B::Error as Infallible,
+    B::Error: Infallible,
 {
     defmt::trace!("update cart");
 
