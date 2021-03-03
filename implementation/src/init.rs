@@ -15,7 +15,7 @@ use hal::{
 };
 use stm32f3xx_hal as hal;
 
-const OPERATING_FREQUENCY_HZ: u32 = 16_000_000;
+pub const OPERATING_FREQUENCY_HZ: u32 = 16_000_000;
 
 pub type PendulumEncoder = es38::Encoder<PendulumEncIn1, PendulumEncIn2>;
 type PendulumEncIn1 = PE13<Input<PullUp>>;
@@ -47,6 +47,10 @@ impl StopWatch {
         // it cannot be stoped
         data_watch_point_trace_unit.enable_cycle_counter();
         StopWatch {}
+    }
+
+    pub const fn max_time_milli_sec() -> u32 {
+        u32::MAX / (OPERATING_FREQUENCY_HZ / 1_000)
     }
 }
 

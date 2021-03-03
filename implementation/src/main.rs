@@ -3,7 +3,8 @@
 mod init;
 
 use core::cell::RefCell;
-use core::convert::{Infallible, TryInto};
+use core::convert::TryInto;
+use es38::Velocity;
 // Allows for communication back to host during panics and dubugging
 // Uncomment when using GDB
 // #[allow(unused_imports)]
@@ -14,7 +15,6 @@ use panic_probe as _;
 // Allows real time logging back to the host. Unfortunately, this is not compatible  with GDB
 use defmt_rtt as _;
 
-use embedded_hal::digital::v2::InputPin;
 use hal::{
     gpio::ExtiPin,
     interrupt,
@@ -23,7 +23,6 @@ use hal::{
 };
 use stm32f3xx_hal as hal;
 
-use es38::Encoder;
 use init::{CartEncoder, PendulumEncoder, StopWatch};
 
 use cortex_m::interrupt::free as interrupt_free;
@@ -54,12 +53,26 @@ macro_rules! get_global_ref_mut {
     };
 }
 
-//fn get_global_ref<'cs, T>(
-//    global_item: &'static Mutex<RefCell<Option<T>>>,
-//    cs: &'cs CriticalSection,
-//) -> &'cs T {
-//    global_item.borrow(cs).borrow().as_ref().unwrap()
-//}
+macro_rules! update_encoder {
+    ($encoder:ident, $cs:ident) => {{
+        defmt::trace!("encoder update");
+
+        let millisec_since_epoch = get_milli_sec_since_epoch($cs);
+
+        // Update the angle and direction state of the encoder
+        get_global_ref_mut!($encoder, $cs)
+            .update(millisec_since_epoch)
+            .unwrap();
+        get_global_ref_mut!($encoder, $cs)
+            .hardware()
+            .pin_a()
+            .clear_interrupt_pending_bit();
+        get_global_ref_mut!($encoder, $cs)
+            .hardware()
+            .pin_b()
+            .clear_interrupt_pending_bit();
+    }};
+}
 
 fn get_milli_sec_since_epoch(cs: &CriticalSection) -> Milliseconds<u32> {
     defmt::trace!("get_milli_sec_since_epoch");
@@ -107,52 +120,49 @@ fn main() -> ! {
             (cart_angle, cart_velocity)
         });
 
+        let cart_degrees_per_sec = match cart_velocity.degrees_per_sec() {
+            Ok(cart_degrees_per_sec) => cart_degrees_per_sec,
+            // Create a local one off velocity struct until the intial time and final time have
+            // been correctly updated
+            Err(es38::Error::VelocityArithmeticOverflowWouldOccur) => {
+                defmt::trace!("Calculating 1 off velocity");
+                let delta_time_milli_sec = Milliseconds(
+                    StopWatch::max_time_milli_sec()
+                        - *cart_velocity.initial_time_since_epoch_milli_sec().integer()
+                        + *cart_velocity.final_time_since_epoch_milli_sec().integer(),
+                );
+                Velocity::new(
+                    Milliseconds(0),
+                    delta_time_milli_sec,
+                    cart_velocity.initial_angle(),
+                    cart_velocity.final_angle(),
+                )
+                .degrees_per_sec()
+                .expect("failure in re-evaluation of velocity")
+            }
+        };
+
         defmt::debug!("cart_velocity: {}", cart_velocity);
+        defmt::debug!("cart_degrees_per_sec: {}", cart_degrees_per_sec);
         // defmt::debug!("cart_angle = {} deg", cart_angle.degrees());
 
         cortex_m::asm::delay(16_000_000)
     }
 }
 
-fn update_encoder<A, B>(
-    encoder: Mutex<RefCell<Option<Encoder<A, B>>>>,
-    cs: &cortex_m::interrupt::CriticalSection,
-) where
-    A: InputPin,
-    A::Error: Infallible,
-    B: InputPin,
-    B::Error: Infallible,
-{
-    defmt::trace!("update cart");
-
-    let millisec_since_epoch = get_milli_sec_since_epoch(cs);
-
-    // Update the angle and direction state of the encoder
-    get_global_ref_mut!(encoder, cs)
-        .update(millisec_since_epoch)
-        .unwrap();
-    get_global_ref_mut!(CART_ENCODER, cs)
-        .hardware()
-        .pin_a()
-        .clear_interrupt_pending_bit();
-    get_global_ref_mut!(CART_ENCODER, cs)
-        .hardware()
-        .pin_b()
-        .clear_interrupt_pending_bit();
-}
-
 // Cart Encoder Interrupt
 #[interrupt]
 fn EXTI1() {
     defmt::trace!("Interrupt EXTI1");
-    interrupt_free(|cs| update_cart(cs))
+    interrupt_free(|cs| update_encoder!(CART_ENCODER, cs))
 }
 
 #[interrupt]
 fn EXTI3() {
     defmt::trace!("Interrupt EXTI3");
-    interrupt_free(|cs| update_cart(cs))
+    interrupt_free(|cs| update_encoder!(CART_ENCODER, cs))
 }
+
 // Pendulum Encoder Interrupt
 #[interrupt]
 fn EXTI15_10() {
