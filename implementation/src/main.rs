@@ -1,13 +1,10 @@
 #![no_std]
 #![no_main]
-
-/// All things related to the intialization of the micro controller
 mod init;
-mod utils;
 
 use core::cell::RefCell;
 use core::convert::TryInto;
-use es38::{Angle, Velocity};
+use es38::Velocity;
 // Allows for communication back to host during panics and dubugging
 // Uncomment when using GDB
 // #[allow(unused_imports)]
@@ -36,17 +33,88 @@ static CART_ENCODER: Mutex<RefCell<Option<CartEncoder>>> = Mutex::new(RefCell::n
 static PENDULUM_ENCODER: Mutex<RefCell<Option<PendulumEncoder>>> = Mutex::new(RefCell::new(None));
 static STOPWATCH: Mutex<RefCell<Option<StopWatch>>> = Mutex::new(RefCell::new(None));
 
+macro_rules! get_global_ref {
+    ($global_item:ident, $cs:ident) => {
+        $global_item
+            .borrow($cs)
+            .borrow()
+            .as_ref()
+            .expect("failed to get global reference")
+    };
+}
+
+macro_rules! get_global_ref_mut {
+    ($global_item:ident, $cs:ident) => {
+        $global_item
+            .borrow($cs)
+            .borrow_mut()
+            .as_mut()
+            .expect("failed to get global mutible reference")
+    };
+}
+
+macro_rules! update_encoder {
+    ($encoder:ident, $cs:ident) => {{
+        defmt::trace!("encoder update");
+
+        let millisec_since_epoch = get_milli_sec_since_epoch($cs);
+
+        // Update the angle and direction state of the encoder
+        get_global_ref_mut!($encoder, $cs)
+            .update(millisec_since_epoch)
+            .unwrap();
+        get_global_ref_mut!($encoder, $cs)
+            .hardware()
+            .pin_a()
+            .clear_interrupt_pending_bit();
+        get_global_ref_mut!($encoder, $cs)
+            .hardware()
+            .pin_b()
+            .clear_interrupt_pending_bit();
+    }};
+}
+
+fn get_milli_sec_since_epoch(cs: &CriticalSection) -> Milliseconds<u32> {
+    defmt::trace!("get_milli_sec_since_epoch");
+    get_global_ref!(STOPWATCH, cs)
+        .try_now()
+        .unwrap()
+        .duration_since_epoch()
+        .try_into()
+        .unwrap()
+}
+
 #[entry]
 fn main() -> ! {
     defmt::trace!("main");
-    setup();
+    let init::Hardware {
+        pendulum_encoder,
+        cart_encoder,
+        motor_driver: _,
+        stopwatch,
+    } = init::Hardware::take();
+
+    // handing the hardware over to a global context do they can be accessed within an interrupt
+    interrupt_free(|cs| {
+        CART_ENCODER.borrow(cs).replace(Some(cart_encoder));
+        PENDULUM_ENCODER.borrow(cs).replace(Some(pendulum_encoder));
+        STOPWATCH.borrow(cs).replace(Some(stopwatch));
+    });
+
+    defmt::debug!("Unmasking interrupts");
+    unsafe {
+        NVIC::unmask(Interrupt::EXTI1);
+        NVIC::unmask(Interrupt::EXTI3);
+        //NVIC::unmask(Interrupt::EXTI15_10);
+    }
+
     defmt::trace!("looping forever");
     loop {
-        let time_since_epoch_milli_sec = interrupt_free(|cs| utils::get_milli_sec_since_epoch(cs));
+        let time_since_epoch_milli_sec = interrupt_free(|cs| get_milli_sec_since_epoch(cs));
 
         let (cart_angle, cart_velocity) = interrupt_free(|cs| {
-            let cart_angle = utils::get_global_ref!(CART_ENCODER, cs).angle().clone();
-            let cart_velocity = utils::get_global_ref_mut!(CART_ENCODER, cs)
+            let cart_angle = get_global_ref!(CART_ENCODER, cs).angle().clone();
+            let cart_velocity = get_global_ref_mut!(CART_ENCODER, cs)
                 .velocity(cart_angle, time_since_epoch_milli_sec);
 
             (cart_angle, cart_velocity)
