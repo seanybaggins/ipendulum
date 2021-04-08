@@ -1,7 +1,11 @@
-use crate::init::STOPWATCH;
+use crate::globals::STOPWATCH;
+use core::convert::TryInto;
 use cortex_m::interrupt::CriticalSection;
+use embedded_time::Clock;
 use hal::time::duration::*;
 use stm32f3xx_hal as hal;
+
+#[macro_export]
 macro_rules! get_global_ref {
     ($global_item:ident, $cs:ident) => {
         $global_item
@@ -12,6 +16,7 @@ macro_rules! get_global_ref {
     };
 }
 
+#[macro_export]
 macro_rules! get_global_ref_mut {
     ($global_item:ident, $cs:ident) => {
         $global_item
@@ -22,21 +27,23 @@ macro_rules! get_global_ref_mut {
     };
 }
 
+#[macro_export]
 macro_rules! update_encoder {
     ($encoder:ident, $cs:ident) => {{
+        use hal::gpio::ExtiPin;
         defmt::trace!("encoder update");
 
-        let millisec_since_epoch = get_milli_sec_since_epoch($cs);
+        let millisec_since_epoch = crate::utils::get_milli_sec_since_epoch($cs);
 
         // Update the angle and direction state of the encoder
-        get_global_ref_mut!($encoder, $cs)
+        crate::get_global_ref_mut!($encoder, $cs)
             .update(millisec_since_epoch)
             .unwrap();
-        get_global_ref_mut!($encoder, $cs)
+        crate::get_global_ref_mut!($encoder, $cs)
             .hardware()
             .pin_a()
             .clear_interrupt_pending_bit();
-        get_global_ref_mut!($encoder, $cs)
+        crate::get_global_ref_mut!($encoder, $cs)
             .hardware()
             .pin_b()
             .clear_interrupt_pending_bit();

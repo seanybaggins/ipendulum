@@ -1,66 +1,24 @@
+use crate::globals::{
+    StopWatch, CART_ENCODER, MOTOR_DRIVER, OPERATING_FREQUENCY_HZ, PENDULUM_ENCODER, STOPWATCH,
+};
+use crate::types::{CartEncoder, MotorDriver, MotorDriverPwmPin, PendulumEncoder};
 use core::convert::TryInto;
-use hal::{gpio::ExtiPin, prelude::*};
+use cortex_m::interrupt::free as interrupt_free;
+use embedded_time::Clock;
 use hal::{
-    gpio::{
-        gpioa::{PA1, PA3},
-        gpiob::{PB6, PB7, PB8},
-        gpioe::{PE13, PE15},
-        Edge,
-    },
-    gpio::{Input, Output, PullUp, PushPull, AF1},
-    pac::{self, DWT},
+    gpio::{Edge, ExtiPin},
+    pac::{self, Interrupt, NVIC},
+    prelude::*,
     pwm,
-    pwm::{PwmChannel, WithPins, TIM16_CH1},
-    time::{clock, duration::*, rate::*, Clock, Instant},
+    time::{duration::*, rate::*},
 };
 use stm32f3xx_hal as hal;
-
-pub const OPERATING_FREQUENCY_HZ: u32 = 16_000_000;
-
-pub type PendulumEncoder = es38::Encoder<PendulumEncIn1, PendulumEncIn2>;
-type PendulumEncIn1 = PE13<Input<PullUp>>;
-type PendulumEncIn2 = PE15<Input<PullUp>>;
-
-pub type CartEncoder = es38::Encoder<CartEncIn1, CartEncIn2>;
-type CartEncIn1 = PA1<Input<PullUp>>;
-type CartEncIn2 = PA3<Input<PullUp>>;
-
-pub type MotorDriver = l298n::Motor<MotorDriverOut1, MotorDriverOut2, MotorDriverPwm>;
-type MotorDriverOut1 = PB6<Output<PushPull>>;
-type MotorDriverOut2 = PB7<Output<PushPull>>;
-type MotorDriverPwm = PwmChannel<TIM16_CH1, WithPins>;
-type MotorDriverPwmPin = PB8<AF1>;
 
 pub struct Hardware {
     pub pendulum_encoder: PendulumEncoder,
     pub cart_encoder: CartEncoder,
     pub motor_driver: MotorDriver,
     pub stopwatch: StopWatch,
-}
-
-// todo: arguably this should be moved to the HAL
-pub struct StopWatch {}
-
-impl StopWatch {
-    pub fn new(mut data_watch_point_trace_unit: DWT) -> Self {
-        // Now that the data watch point trace has been started,
-        // it cannot be stoped
-        data_watch_point_trace_unit.enable_cycle_counter();
-        StopWatch {}
-    }
-
-    pub const fn max_time_milli_sec() -> u32 {
-        u32::MAX / (OPERATING_FREQUENCY_HZ / 1_000)
-    }
-}
-
-impl embedded_time::Clock for StopWatch {
-    type T = u32;
-    const SCALING_FACTOR: Fraction = Fraction::new(1, OPERATING_FREQUENCY_HZ);
-    fn try_now(&self) -> Result<Instant<Self>, clock::Error> {
-        // DWT::unlock();
-        Ok(Instant::new(DWT::get_cycle_count()))
-    }
 }
 
 impl Hardware {
@@ -99,7 +57,7 @@ impl Hardware {
             50.Hz(),  // frequency
             &clocks,
         );
-        let pwm_channel: MotorDriverPwm = pwm_channel_no_pins.output_to_pb8(pb8);
+        let pwm_channel = pwm_channel_no_pins.output_to_pb8(pb8);
         let out1 = gpiob
             .pb6
             .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
@@ -118,14 +76,14 @@ impl Hardware {
             .unwrap();
 
         // Pendulum encoder setup
-        let mut a_pe13: PendulumEncIn1 = gpioe
+        let mut a_pe13 = gpioe
             .pe13
             .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
         a_pe13.make_interrupt_source(&mut syscfg);
         a_pe13.trigger_on_edge(&mut exti, Edge::Rising);
         a_pe13.enable_interrupt(&mut exti);
 
-        let b_pe15: PendulumEncIn2 = gpioe
+        let b_pe15 = gpioe
             .pe15
             .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
         let origin_offset_counts = 180;
@@ -136,14 +94,14 @@ impl Hardware {
             es38::Encoder::new(a_pe13, b_pe15, initial_angle, time_since_epoch_milli_sec);
 
         // Cart encoder setup
-        let mut a_pa1: CartEncIn1 = gpioa
+        let mut a_pa1 = gpioa
             .pa1
             .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
         a_pa1.make_interrupt_source(&mut syscfg);
         a_pa1.trigger_on_edge(&mut exti, Edge::RisingFalling);
         a_pa1.enable_interrupt(&mut exti);
 
-        let mut b_pa3: CartEncIn2 = gpioa
+        let mut b_pa3 = gpioa
             .pa3
             .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
         b_pa3.make_interrupt_source(&mut syscfg);
@@ -163,5 +121,30 @@ impl Hardware {
             cart_encoder,
             stopwatch,
         }
+    }
+}
+
+pub fn setup() {
+    defmt::trace!("main");
+    let Hardware {
+        pendulum_encoder,
+        cart_encoder,
+        motor_driver,
+        stopwatch,
+    } = Hardware::take();
+
+    // handing the hardware over to a global context do they can be accessed within an interrupt
+    interrupt_free(|cs| {
+        CART_ENCODER.borrow(cs).replace(Some(cart_encoder));
+        PENDULUM_ENCODER.borrow(cs).replace(Some(pendulum_encoder));
+        STOPWATCH.borrow(cs).replace(Some(stopwatch));
+        MOTOR_DRIVER.borrow(cs).replace(Some(motor_driver));
+    });
+
+    defmt::debug!("Unmasking interrupts");
+    unsafe {
+        NVIC::unmask(Interrupt::EXTI1);
+        NVIC::unmask(Interrupt::EXTI3);
+        //NVIC::unmask(Interrupt::EXTI15_10);
     }
 }
