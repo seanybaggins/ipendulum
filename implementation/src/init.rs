@@ -39,81 +39,80 @@ impl Hardware {
             .freeze(&mut flash.acr);
 
         // Pin ports in use
-        let mut gpiob = device_peripherals
-            .GPIOB
-            .split(&mut reset_and_control_clock.ahb);
-        let mut gpioe = device_peripherals
-            .GPIOE
+        let mut gpiod = device_peripherals
+            .GPIOD
             .split(&mut reset_and_control_clock.ahb);
         let mut gpioa = device_peripherals
             .GPIOA
             .split(&mut reset_and_control_clock.ahb);
 
         // Motor setup
-        let pb8: MotorDriverPwmPin = gpiob.pb8.into_af1(&mut gpiob.moder, &mut gpiob.afrh);
-        let pwm_channel_no_pins = pwm::tim16(
-            device_peripherals.TIM16,
+        let motor_driver_pwm_pin: MotorDriverPwmPin =
+            gpiod.pd1.into_af4(&mut gpiod.moder, &mut gpiod.afrl);
+        let pwm_channel_no_pins = pwm::tim8(
+            device_peripherals.TIM8,
             u16::MAX, // resolution
             50.Hz(),  // frequency
             &clocks,
         );
-        let pwm_channel = pwm_channel_no_pins.output_to_pb8(pb8);
-        let out1 = gpiob
-            .pb6
-            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-        let out2 = gpiob
-            .pb7
-            .into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+        let pwm_channel = pwm_channel_no_pins.3.output_to_pd1(motor_driver_pwm_pin);
+        let out1 = gpiod
+            .pd3
+            .into_push_pull_output(&mut gpiod.moder, &mut gpiod.otyper);
+        let out2 = gpiod
+            .pd4
+            .into_push_pull_output(&mut gpiod.moder, &mut gpiod.otyper);
         let motor_driver: MotorDriver = l298n::Motor::new(out1, out2, pwm_channel);
 
         // stopwatch creation
         let stopwatch = StopWatch::new(core_peripherals.DWT);
-        let time_since_epoch_milli_sec: Milliseconds<u32> = stopwatch
-            .try_now()
-            .unwrap()
-            .duration_since_epoch()
-            .try_into()
-            .unwrap();
 
         // Pendulum encoder setup
-        let mut a_pe13 = gpioe
-            .pe13
-            .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
-        a_pe13.make_interrupt_source(&mut syscfg);
-        a_pe13.trigger_on_edge(&mut exti, Edge::Rising);
-        a_pe13.enable_interrupt(&mut exti);
+        let mut pendulum_encoder_in_1_pin = gpioa
+            .pa0
+            .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
+        pendulum_encoder_in_1_pin.make_interrupt_source(&mut syscfg);
+        pendulum_encoder_in_1_pin.trigger_on_edge(&mut exti, Edge::RisingFalling);
+        pendulum_encoder_in_1_pin.enable_interrupt(&mut exti);
 
-        let b_pe15 = gpioe
-            .pe15
-            .into_pull_up_input(&mut gpioe.moder, &mut gpioe.pupdr);
-        let origin_offset_counts = 180;
+        let mut pendulum_encoder_in_2_pin = gpioa
+            .pa2
+            .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
+        pendulum_encoder_in_2_pin.make_interrupt_source(&mut syscfg);
+        pendulum_encoder_in_2_pin.trigger_on_edge(&mut exti, Edge::RisingFalling);
+        pendulum_encoder_in_2_pin.enable_interrupt(&mut exti);
+
+        let origin_offset_counts = 0;
         let counts_per_rev = 2400;
 
         let initial_angle = es38::Angle::new(counts_per_rev, origin_offset_counts);
-        let pendulum_encoder: PendulumEncoder =
-            es38::Encoder::new(a_pe13, b_pe15, initial_angle, time_since_epoch_milli_sec);
+        let pendulum_encoder: PendulumEncoder = es38::Encoder::new(
+            pendulum_encoder_in_1_pin,
+            pendulum_encoder_in_2_pin,
+            initial_angle,
+        );
 
         // Cart encoder setup
-        let mut a_pa1 = gpioa
+        let mut cart_encoder_in_1_pin = gpioa
             .pa1
-            .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
-        a_pa1.make_interrupt_source(&mut syscfg);
-        a_pa1.trigger_on_edge(&mut exti, Edge::RisingFalling);
-        a_pa1.enable_interrupt(&mut exti);
+            .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
+        cart_encoder_in_1_pin.make_interrupt_source(&mut syscfg);
+        cart_encoder_in_1_pin.trigger_on_edge(&mut exti, Edge::RisingFalling);
+        cart_encoder_in_1_pin.enable_interrupt(&mut exti);
 
-        let mut b_pa3 = gpioa
+        let mut cart_encoder_in_2_pin = gpioa
             .pa3
-            .into_pull_up_input(&mut gpioa.moder, &mut gpioa.pupdr);
-        b_pa3.make_interrupt_source(&mut syscfg);
-        b_pa3.trigger_on_edge(&mut exti, Edge::RisingFalling);
-        b_pa3.enable_interrupt(&mut exti);
+            .into_floating_input(&mut gpioa.moder, &mut gpioa.pupdr);
+        cart_encoder_in_2_pin.make_interrupt_source(&mut syscfg);
+        cart_encoder_in_2_pin.trigger_on_edge(&mut exti, Edge::RisingFalling);
+        cart_encoder_in_2_pin.enable_interrupt(&mut exti);
 
         let origin_offset_counts = 0;
         let counts_per_rev = 2400;
 
         let initial_angle = es38::Angle::new(counts_per_rev, origin_offset_counts);
         let cart_encoder: CartEncoder =
-            es38::Encoder::new(a_pa1, b_pa3, initial_angle, time_since_epoch_milli_sec);
+            es38::Encoder::new(cart_encoder_in_1_pin, cart_encoder_in_2_pin, initial_angle);
 
         Hardware {
             motor_driver,
@@ -134,17 +133,16 @@ pub fn setup() {
     } = Hardware::take();
 
     // handing the hardware over to a global context do they can be accessed within an interrupt
-    interrupt_free(|cs| {
-        CART_ENCODER.borrow(cs).replace(Some(cart_encoder));
-        PENDULUM_ENCODER.borrow(cs).replace(Some(pendulum_encoder));
-        STOPWATCH.borrow(cs).replace(Some(stopwatch));
-        MOTOR_DRIVER.borrow(cs).replace(Some(motor_driver));
-    });
+    CART_ENCODER = Some(cart_encoder);
+    PENDULUM_ENCODER = Some(pendulum_encoder);
+    STOPWATCH = Some(stopwatch);
+    MOTOR_DRIVER = Some(motor_driver);
 
     defmt::debug!("Unmasking interrupts");
     unsafe {
+        NVIC::unmask(Interrupt::EXTI0);
         NVIC::unmask(Interrupt::EXTI1);
+        NVIC::unmask(Interrupt::EXTI2_TSC);
         NVIC::unmask(Interrupt::EXTI3);
-        //NVIC::unmask(Interrupt::EXTI15_10);
     }
 }

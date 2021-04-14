@@ -1,0 +1,206 @@
+         INFO  time (ms), angle (rad)
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:27
+         INFO  1350, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1351, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1352, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1353, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1354, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1355, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1355, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1356, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1357, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1358, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1359, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1360, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1361, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1362, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1363, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1364, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1365, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1366, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1367, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1368, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1369, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1370, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1371, 0.0
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1432, 0.028797934
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1433, 0.028797934
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1463, 0.044505898
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1464, 0.044505898
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1465, 0.044505898
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1466, 0.044505898
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1478, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1479, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1480, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1481, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1482, 0.03403392
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1511, 0.03926991
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1513, 0.041887905
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1514, 0.041887905
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1515, 0.041887905
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1525, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1527, 0.036651913
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1528, 0.03926991
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1529, 0.03926991
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1531, 0.041887905
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1561, 0.057595868
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1562, 0.060213864
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1563, 0.060213864
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1564, 0.057595868
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1596, 0.057595868
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1597, 0.057595868
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1609, 0.06544985
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1610, 0.06544985
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1611, 0.06544985
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1612, 0.06544985
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1613, 0.08377581
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1642, 0.08377581
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1643, 0.08377581
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1644, 0.08377581
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1645, 0.086393796
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1675, 0.10471976
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1676, 0.10471976
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1677, 0.10733775
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1680, 0.09424779
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1694, 0.09162979
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1710, 0.099483766
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1711, 0.10471976
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1725, 0.10471976
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1725, 0.10471976
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1726, 0.10733775
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1728, 0.1308997
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1760, 0.13613568
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1772, 0.1282817
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1773, 0.1282817
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1774, 0.1282817
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1775, 0.1308997
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1776, 0.1308997
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1777, 0.1308997
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1806, 0.15446165
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1808, 0.15969762
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1810, 0.16231564
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1840, 0.16493362
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1841, 0.16493362
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1842, 0.16231564
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1875, 0.16755162
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  1876, 0.16755162
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+         INFO  2023, 0.11780973
+└─ step_response::__cortex_m_rt_main @ src/bin/step_response.rs:47
+stack backtrace:
+   0: <core::cell::BorrowRef as core::ops::drop::Drop>::drop
+        at /home/sean/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cell.rs:1184
+   1: core::ptr::drop_in_place
+        at /home/sean/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:179
+   2: core::ptr::drop_in_place
+        at /home/sean/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/mod.rs:179
+   3: implementation::utils::get_milli_sec_since_epoch
+        at src/utils.rs:61
+   4: implementation::interrupts::__cortex_m_rt_EXTI1::{{closure}}
+        at src/interrupts.rs:15
+   5: cortex_m::interrupt::free
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/cortex-m-0.7.1/src/interrupt.rs:64
+   6: implementation::interrupts::__cortex_m_rt_EXTI1
+        at src/interrupts.rs:15
+   7: EXTI1
+        at src/interrupts.rs:12
+      <exception entry>
+   8: cortex_m::interrupt::enable
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/cortex-m-0.7.1/src/interrupt.rs:48
+   9: <defmt_rtt::Logger as defmt::Logger>::release
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/defmt-rtt-0.2.0/src/lib.rs:61
+  10: _defmt_release
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/defmt-rtt-0.2.0/src/lib.rs:25
+  11: defmt::export::release
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/defmt-0.2.0/src/export.rs:48
+  12: step_response::__cortex_m_rt_main
+        at src/bin/step_response.rs:47
+  13: main
+        at src/bin/step_response.rs:19
+  14: ResetTrampoline
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/cortex-m-rt-0.6.13/src/lib.rs:547
+  15: Reset
+        at /home/sean/.cargo/registry/src/github.com-1ecc6299db9ec823/cortex-m-rt-0.6.13/src/lib.rs:550

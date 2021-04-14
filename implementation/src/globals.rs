@@ -5,14 +5,12 @@ use embedded_time::{clock, duration::*, Instant};
 use hal::pac::DWT;
 use stm32f3xx_hal as hal;
 
-pub const OPERATING_FREQUENCY_HZ: u32 = 16_000_000;
-pub static CART_ENCODER: Mutex<RefCell<Option<CartEncoder>>> = Mutex::new(RefCell::new(None));
-pub static PENDULUM_ENCODER: Mutex<RefCell<Option<PendulumEncoder>>> =
-    Mutex::new(RefCell::new(None));
-pub static STOPWATCH: Mutex<RefCell<Option<StopWatch>>> = Mutex::new(RefCell::new(None));
-pub static MOTOR_DRIVER: Mutex<RefCell<Option<MotorDriver>>> = Mutex::new(RefCell::new(None));
+pub const OPERATING_FREQUENCY_HZ: u32 = 48_000_000;
+pub static mut CART_ENCODER: Option<CartEncoder> = None;
+pub static mut PENDULUM_ENCODER: Option<PendulumEncoder> = None;
+pub static mut STOPWATCH: Option<StopWatch> = None;
+pub static mut MOTOR_DRIVER: Option<MotorDriver> = None;
 
-// todo: arguably this should be moved to the HAL
 pub struct StopWatch {}
 
 impl StopWatch {

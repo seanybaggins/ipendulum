@@ -1,24 +1,28 @@
-use crate::globals::CART_ENCODER;
-use crate::update_encoder;
-use cortex_m::interrupt::free as interrupt_free;
+use crate::encoder;
+use crate::globals::{CART_ENCODER, PENDULUM_ENCODER};
 use hal::interrupt;
 use stm32f3xx_hal as hal;
 
-// Cart Encoder Interrupt
+#[interrupt]
+fn EXTI0() {
+    defmt::trace!("Interrupt EXTI0");
+    encoder::update(&mut PENDULUM_ENCODER.unwrap());
+}
+
 #[interrupt]
 fn EXTI1() {
     defmt::trace!("Interrupt EXTI1");
-    interrupt_free(|cs| update_encoder!(CART_ENCODER, cs))
+    encoder::update(&mut CART_ENCODER.unwrap());
+}
+
+#[interrupt]
+fn EXTI2_TSC() {
+    defmt::trace!("Interrupt EXTI2");
+    encoder::update(&mut PENDULUM_ENCODER.unwrap());
 }
 
 #[interrupt]
 fn EXTI3() {
     defmt::trace!("Interrupt EXTI3");
-    interrupt_free(|cs| update_encoder!(CART_ENCODER, cs))
-}
-
-// Pendulum Encoder Interrupt
-#[interrupt]
-fn EXTI15_10() {
-    defmt::trace!("Interrupt EXTI15_10");
+    encoder::update(&mut CART_ENCODER.unwrap());
 }
