@@ -1,16 +1,11 @@
-use crate::globals::{
-    StopWatch, CART_ENCODER, MOTOR_DRIVER, OPERATING_FREQUENCY_HZ, PENDULUM_ENCODER, STOPWATCH,
-};
+use crate::globals::{StopWatch, OPERATING_FREQUENCY_HZ};
 use crate::types::{CartEncoder, MotorDriver, MotorDriverPwmPin, PendulumEncoder};
-use core::convert::TryInto;
-use cortex_m::interrupt::free as interrupt_free;
-use embedded_time::Clock;
+
 use hal::{
     gpio::{Edge, ExtiPin},
-    pac::{self, Interrupt, NVIC},
     prelude::*,
     pwm,
-    time::{duration::*, rate::*},
+    time::rate::*,
 };
 use stm32f3xx_hal as hal;
 
@@ -22,11 +17,12 @@ pub struct Hardware {
 }
 
 impl Hardware {
-    pub fn take() -> Self {
+    pub fn take(
+        core_peripherals: hal::pac::CorePeripherals,
+        device_peripherals: hal::pac::Peripherals,
+    ) -> Self {
         defmt::trace!("Hardware take");
         // Typical acquiring of board singleton and setting the clock speed
-        let core_peripherals = pac::CorePeripherals::take().unwrap();
-        let device_peripherals = pac::Peripherals::take().unwrap();
         let mut flash = device_peripherals.FLASH.constrain();
         let mut reset_and_control_clock = device_peripherals.RCC.constrain();
         let mut syscfg = device_peripherals.SYSCFG;
@@ -120,29 +116,5 @@ impl Hardware {
             cart_encoder,
             stopwatch,
         }
-    }
-}
-
-pub fn setup() {
-    defmt::trace!("main");
-    let Hardware {
-        pendulum_encoder,
-        cart_encoder,
-        motor_driver,
-        stopwatch,
-    } = Hardware::take();
-
-    // handing the hardware over to a global context do they can be accessed within an interrupt
-    CART_ENCODER = Some(cart_encoder);
-    PENDULUM_ENCODER = Some(pendulum_encoder);
-    STOPWATCH = Some(stopwatch);
-    MOTOR_DRIVER = Some(motor_driver);
-
-    defmt::debug!("Unmasking interrupts");
-    unsafe {
-        NVIC::unmask(Interrupt::EXTI0);
-        NVIC::unmask(Interrupt::EXTI1);
-        NVIC::unmask(Interrupt::EXTI2_TSC);
-        NVIC::unmask(Interrupt::EXTI3);
     }
 }
