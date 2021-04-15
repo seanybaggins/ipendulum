@@ -1,4 +1,4 @@
-use crate::globals::{StopWatch, OPERATING_FREQUENCY_HZ};
+use crate::timing::{StopWatch, OPERATING_FREQUENCY_HZ};
 use crate::types::{CartEncoder, MotorDriver, MotorDriverPwmPin, PendulumEncoder};
 
 use hal::{
@@ -18,7 +18,7 @@ pub struct Hardware {
 
 impl Hardware {
     pub fn take(
-        core_peripherals: hal::pac::CorePeripherals,
+        core_peripherals: rtic::export::Peripherals,
         device_peripherals: hal::pac::Peripherals,
     ) -> Self {
         defmt::trace!("Hardware take");

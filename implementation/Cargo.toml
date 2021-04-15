@@ -7,7 +7,6 @@ version = "0.1.0"
 
 [dependencies]
 cortex-m = "0.6.4"
-cortex-m-rt = "0.6.10"
 stm32f3xx-hal = {path = "stm32f3xx-hal", features = ["stm32f303xc", "rt", "unproven"]}
 cortex-m-rtic = "0.5.6"
 

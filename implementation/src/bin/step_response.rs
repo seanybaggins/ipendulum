@@ -13,9 +13,11 @@ use defmt_rtt as _;
 //use implementation::globals::{self, CART_ENCODER, MOTOR_DRIVER, PENDULUM_ENCODER};
 //use implementation::init;
 use implementation::{
-    globals::StopWatch,
+    timing::StopWatch,
     types::{CartEncoder, MotorDriver, PendulumEncoder},
 };
+
+use stm32f3xx_hal::gpio::ExtiPin;
 
 #[rtic::app(device = stm32f3xx_hal::pac, peripherals = true)]
 const APP: () = {
@@ -28,7 +30,6 @@ const APP: () = {
 
     #[init]
     fn init(cx: init::Context) -> init::LateResources {
-        defmt::trace!("init");
         let implementation::init::Hardware {
             pendulum_encoder,
             cart_encoder,
@@ -44,52 +45,67 @@ const APP: () = {
         }
     }
 
-    #[task(binds = EXTI0, resources = [pendulum_encoder], priority = 1)]
-    fn exti0(mut cx: exti0::Context) {
+    #[task(binds = EXTI0, resources = [pendulum_encoder], priority = 2)]
+    fn exti0(cx: exti0::Context) {
         defmt::trace!("EXTI0");
-        cx.resources.pendulum_encoder.lock(|pendulum_encoder| {
-            pendulum_encoder.update().expect("EXTI0 Failed");
-        })
+        let pendulum_encoder = cx.resources.pendulum_encoder;
+        pendulum_encoder.update().expect("EXTI0 Failed");
+        pendulum_encoder
+            .hardware()
+            .pin_a()
+            .clear_interrupt_pending_bit();
     }
 
-    #[task(binds = EXTI1, resources = [cart_encoder], priority = 1)]
-    fn exti1(mut cx: exti1::Context) {
+    #[task(binds = EXTI1, resources = [cart_encoder], priority = 2)]
+    fn exti1(cx: exti1::Context) {
         defmt::trace!("EXTI1");
-        cx.resources
-            .cart_encoder
-            .lock(|cart_encoder| cart_encoder.update().expect("EXTI1 Failed"));
+        let cart_encoder = cx.resources.cart_encoder;
+        cart_encoder.update().expect("EXTI1 Failed");
+        cart_encoder
+            .hardware()
+            .pin_a()
+            .clear_interrupt_pending_bit();
     }
 
-    #[task(binds = EXTI2_TSC, resources = [pendulum_encoder], priority = 1)]
-    fn exti2_tsc(mut cx: exti2_tsc::Context) {
+    #[task(binds = EXTI2_TSC, resources = [pendulum_encoder], priority = 2)]
+    fn exti2_tsc(cx: exti2_tsc::Context) {
         defmt::trace!("EXTI2");
-        cx.resources.pendulum_encoder.lock(|pendulum_encoder| {
-            pendulum_encoder.update().expect("EXTI2 Failed");
-        })
+        let pendulum_encoder = cx.resources.pendulum_encoder;
+        pendulum_encoder.update().expect("EXTI2 Failed");
+        pendulum_encoder
+            .hardware()
+            .pin_b()
+            .clear_interrupt_pending_bit();
     }
 
-    #[task(binds = EXTI3, resources = [cart_encoder], priority = 1)]
-    fn exti3(mut cx: exti3::Context) {
+    #[task(binds = EXTI3, resources = [cart_encoder], priority = 2)]
+    fn exti3(cx: exti3::Context) {
         defmt::trace!("EXTI3");
-        cx.resources.cart_encoder.lock(|cart_encoder| {
-            cart_encoder.update().expect("EXTI3 Failed");
-        })
+        let cart_encoder = cx.resources.cart_encoder;
+        cart_encoder.update().expect("EXTI3 Failed");
+        cart_encoder
+            .hardware()
+            .pin_b()
+            .clear_interrupt_pending_bit();
     }
 
-    #[task(resources = [cart_encoder, pendulum_encoder, stopwatch], priority = 2)]
-    fn log_data(cx: log_data::Context) {
-        let cart_angle = cx.resources.cart_encoder.angle();
-        let pendulum_angle = cx.resources.pendulum_encoder.angle();
-        let time_millisec = cx.resources.stopwatch.milli_sec_since_epoch();
+    #[task(resources = [cart_encoder, pendulum_encoder, stopwatch], priority = 1)]
+    fn log_data(mut cx: log_data::Context) {
+        defmt::trace!("logging");
+        let cart_angle = cx.resources.cart_encoder.lock(|cart| cart.angle().clone());
+        let pendulum_angle = cx
+            .resources
+            .pendulum_encoder
+            .lock(|pen| pen.angle().clone());
+        let time_millisec = cx.resources.stopwatch.micro_seconds_since_epoch();
         defmt::info!("{}, {}, {}", time_millisec, pendulum_angle, cart_angle);
     }
 
     #[idle(spawn = [log_data])]
     fn idle(cx: idle::Context) -> ! {
         defmt::trace!("idle");
-        loop {
-            cx.spawn.log_data().expect("Failed to spawn log data");
-        }
+        cx.spawn.log_data().expect("Failed to spawn log data");
+        loop {}
     }
 
     // RTIC requires that unused interrupts are declared in an extern block when
