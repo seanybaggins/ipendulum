@@ -1,6 +1,4 @@
-use crate::timing::{StopWatch, OPERATING_FREQUENCY_HZ};
 use crate::types::{CartEncoder, MotorDriver, MotorDriverPwmPin, PendulumEncoder};
-
 use hal::{
     gpio::{Edge, ExtiPin},
     prelude::*,
@@ -9,11 +7,13 @@ use hal::{
 };
 use stm32f3xx_hal as hal;
 
+pub const OPERATING_FREQUENCY_HZ: u32 = 48_000_000;
+
 pub struct Hardware {
     pub pendulum_encoder: PendulumEncoder,
     pub cart_encoder: CartEncoder,
     pub motor_driver: MotorDriver,
-    pub stopwatch: StopWatch,
+    pub mono_timer: dwt_systick_monotonic::DwtSystick<OPERATING_FREQUENCY_HZ>,
 }
 
 impl Hardware {
@@ -60,8 +60,11 @@ impl Hardware {
             .into_push_pull_output(&mut gpiod.moder, &mut gpiod.otyper);
         let motor_driver: MotorDriver = l298n::Motor::new(out1, out2, pwm_channel);
 
-        // stopwatch creation
-        let stopwatch = StopWatch::new(core_peripherals.DWT);
+        let mut dcb = core_peripherals.DCB;
+        let dwt = core_peripherals.DWT;
+        let systick = core_peripherals.SYST;
+        let mono_timer =
+            dwt_systick_monotonic::DwtSystick::new(&mut dcb, dwt, systick, OPERATING_FREQUENCY_HZ);
 
         // Pendulum encoder setup
         let mut pendulum_encoder_in_1_pin = gpioa
@@ -114,7 +117,7 @@ impl Hardware {
             motor_driver,
             pendulum_encoder,
             cart_encoder,
-            stopwatch,
+            mono_timer,
         }
     }
 }

@@ -10,108 +10,120 @@ use panic_probe as _;
 // Allows real time logging back to the host. Unfortunately, this is not compatible  with GDB
 use defmt_rtt as _;
 
-//use implementation::globals::{self, CART_ENCODER, MOTOR_DRIVER, PENDULUM_ENCODER};
-//use implementation::init;
-use implementation::{
-    timing::StopWatch,
-    types::{CartEncoder, MotorDriver, PendulumEncoder},
-};
+#[rtic::app(device = stm32f3xx_hal::pac, peripherals = true, dispatchers = [EXTI9_5])]
+mod app {
+    use core::convert::TryInto;
+    use dwt_systick_monotonic::DwtSystick;
+    use implementation::{
+        timing::{StopWatch, OPERATING_FREQUENCY_HZ},
+        types::{CartEncoder, MotorDriver, PendulumEncoder},
+    };
+    use rtic::time::duration::*;
+    use stm32f3xx_hal::gpio::ExtiPin;
+    const LOG_PERIOD: Milliseconds = Milliseconds(100_u32);
 
-use stm32f3xx_hal::gpio::ExtiPin;
-
-#[rtic::app(device = stm32f3xx_hal::pac, peripherals = true)]
-const APP: () = {
+    #[resources]
     struct Resources {
         pendulum_encoder: PendulumEncoder,
         cart_encoder: CartEncoder,
         motor_driver: MotorDriver,
-        stopwatch: StopWatch,
     }
 
+    #[monotonic(binds = SysTick, default = true)]
+    type Timer = DwtSystick<OPERATING_FREQUENCY_HZ>;
+
     #[init]
-    fn init(cx: init::Context) -> init::LateResources {
+    fn init(cx: init::Context) -> (init::LateResources, init::Monotonics) {
+        defmt::trace!("init");
+        log_data::spawn_after(LOG_PERIOD).unwrap();
+
         let implementation::init::Hardware {
             pendulum_encoder,
             cart_encoder,
-            motor_driver,
-            stopwatch,
+            mut motor_driver,
+            mono_timer,
         } = implementation::init::Hardware::take(cx.core, cx.device);
 
-        init::LateResources {
-            pendulum_encoder,
-            cart_encoder,
-            motor_driver,
-            stopwatch,
-        }
+        motor_driver.set_duty(motor_driver.get_max_duty() / 2);
+        motor_driver.forward();
+
+        (
+            init::LateResources {
+                pendulum_encoder,
+                cart_encoder,
+                motor_driver,
+            },
+            init::Monotonics(mono_timer),
+        )
     }
 
     #[task(binds = EXTI0, resources = [pendulum_encoder], priority = 2)]
     fn exti0(cx: exti0::Context) {
         defmt::trace!("EXTI0");
-        let pendulum_encoder = cx.resources.pendulum_encoder;
-        pendulum_encoder.update().expect("EXTI0 Failed");
-        pendulum_encoder
-            .hardware()
-            .pin_a()
-            .clear_interrupt_pending_bit();
+        let mut pendulum_encoder = cx.resources.pendulum_encoder;
+        pendulum_encoder.lock(|pendulum_encoder| {
+            pendulum_encoder.update().expect("EXTI0 Failed");
+            pendulum_encoder
+                .hardware()
+                .pin_a()
+                .clear_interrupt_pending_bit();
+        })
     }
 
     #[task(binds = EXTI1, resources = [cart_encoder], priority = 2)]
     fn exti1(cx: exti1::Context) {
         defmt::trace!("EXTI1");
-        let cart_encoder = cx.resources.cart_encoder;
-        cart_encoder.update().expect("EXTI1 Failed");
-        cart_encoder
-            .hardware()
-            .pin_a()
-            .clear_interrupt_pending_bit();
+        let mut cart_encoder = cx.resources.cart_encoder;
+        cart_encoder.lock(|cart_encoder| {
+            cart_encoder.update().expect("EXTI1 Failed");
+            cart_encoder
+                .hardware()
+                .pin_a()
+                .clear_interrupt_pending_bit();
+        })
     }
 
     #[task(binds = EXTI2_TSC, resources = [pendulum_encoder], priority = 2)]
     fn exti2_tsc(cx: exti2_tsc::Context) {
         defmt::trace!("EXTI2");
-        let pendulum_encoder = cx.resources.pendulum_encoder;
-        pendulum_encoder.update().expect("EXTI2 Failed");
-        pendulum_encoder
-            .hardware()
-            .pin_b()
-            .clear_interrupt_pending_bit();
+        let mut pendulum_encoder = cx.resources.pendulum_encoder;
+        pendulum_encoder.lock(|pendulum_encoder| {
+            pendulum_encoder.update().expect("EXTI2 Failed");
+            pendulum_encoder
+                .hardware()
+                .pin_b()
+                .clear_interrupt_pending_bit();
+        })
     }
 
     #[task(binds = EXTI3, resources = [cart_encoder], priority = 2)]
     fn exti3(cx: exti3::Context) {
         defmt::trace!("EXTI3");
-        let cart_encoder = cx.resources.cart_encoder;
-        cart_encoder.update().expect("EXTI3 Failed");
-        cart_encoder
-            .hardware()
-            .pin_b()
-            .clear_interrupt_pending_bit();
+        let mut cart_encoder = cx.resources.cart_encoder;
+        cart_encoder.lock(|cart_encoder| {
+            cart_encoder.update().expect("EXTI3 Failed");
+            cart_encoder
+                .hardware()
+                .pin_b()
+                .clear_interrupt_pending_bit();
+        })
     }
 
-    #[task(resources = [cart_encoder, pendulum_encoder, stopwatch], priority = 1)]
+    #[task(resources = [cart_encoder], priority = 1)]
     fn log_data(mut cx: log_data::Context) {
         defmt::trace!("logging");
+        let duration_since_epoch_millisecs: Milliseconds = monotonics::Timer::now()
+            .duration_since_epoch()
+            .try_into()
+            .unwrap();
         let cart_angle = cx.resources.cart_encoder.lock(|cart| cart.angle().clone());
-        let pendulum_angle = cx
-            .resources
-            .pendulum_encoder
-            .lock(|pen| pen.angle().clone());
-        let time_millisec = cx.resources.stopwatch.micro_seconds_since_epoch();
-        defmt::info!("{}, {}, {}", time_millisec, pendulum_angle, cart_angle);
-    }
+        defmt::info!(
+            "{}, {}",
+            duration_since_epoch_millisecs.integer(),
+            cart_angle
+        );
 
-    #[idle(spawn = [log_data])]
-    fn idle(cx: idle::Context) -> ! {
-        defmt::trace!("idle");
-        cx.spawn.log_data().expect("Failed to spawn log data");
-        loop {}
+        let over_waited_time = duration_since_epoch_millisecs % LOG_PERIOD;
+        log_data::spawn_after(LOG_PERIOD - over_waited_time).unwrap();
     }
-
-    // RTIC requires that unused interrupts are declared in an extern block when
-    // using software tasks; these free interrupts will be used to dispatch the
-    // software tasks.
-    extern "C" {
-        fn EXTI9_5();
-    }
-};
+}

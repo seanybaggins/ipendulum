@@ -1,8 +1,7 @@
 use hal::pac::DWT;
 use stm32f3xx_hal as hal;
 //use time::duration::*;
-
-pub const OPERATING_FREQUENCY_HZ: u32 = 48_000_000;
+use embedded_time::duration::*;
 
 pub struct StopWatch {
     cycle_minute_hand: u32,
@@ -45,7 +44,13 @@ impl StopWatch {
         cycles_since_epoch
     }
 
-    pub fn micro_seconds_since_epoch(&mut self) -> u64 {
-        self.cycles_since_epoch() / (OPERATING_FREQUENCY_HZ / 1_000_000) as u64
+    pub fn micro_seconds_since_epoch(&mut self) -> Microseconds<u64> {
+        Microseconds::new(self.cycles_since_epoch() / (OPERATING_FREQUENCY_HZ / 1_000_000) as u64)
     }
 }
+
+//impl rtic::rtic_monotonic::Monotonic for StopWatch {
+//    const DISABLE_INTERRUPT_ON_EMPTY_QUEUE: bool = false;
+//
+//    unsafe fn reset(&mut self) {}
+//}
